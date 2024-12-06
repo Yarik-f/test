@@ -17,9 +17,13 @@
 #         cruises = Cruise.objects.all()
 #         return render(request, 'cruise/index.html', {'cruises': cruises})
 from rest_framework import viewsets
-from .models import Ship
-from .serialisers import ShipSerializer
+from .models import Ship, Passenger
+from .serialisers import ShipSerializer, PassengerSerializer
 
 class ShipViewSet(viewsets.ModelViewSet):
     queryset = Ship.objects.all()
     serializer_class = ShipSerializer
+
+class PassengerViewSet(viewsets.ModelViewSet):
+    queryset = Passenger.objects.all()
+    serializer_class = PassengerSerializer

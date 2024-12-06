@@ -81,7 +81,7 @@ class Booking_list(models.Model):
 class Booking_ship(models.Model):
     number_booking = models.UUIDField(default=uuid.uuid4(), editable=False)
     user = models.ForeignKey(Passenger, on_delete=models.CASCADE)
-    ship = models.ForeignKey(Ship, on_delete=models.CASCADE)
+    ship = models.ForeignKey(Ship, on_delete=models.CASCADE)# Booking_list добавить вместо коробля
     count_day = models.IntegerField()
     service = models.ForeignKey(Additional_service, on_delete=models.CASCADE)
     price = models.IntegerField()
