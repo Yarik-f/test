@@ -13,15 +13,8 @@ from rest_framework.exceptions import APIException
 
 from . import serialisers, models
 
-@api_view(['GET', 'POST'])
-def test(request, name):
-    print(request.__dict__)
-    print(request.GET)
-    print(request.method)
-    print(request.session)
-    print(request._user)
-    print(request.parser_context['kwargs'])
-    print(name)
-    data = models.Passenger.objects.all()
-    serialized_data = serialisers.PassengerSerializer(data, many=True).data
-    return Response(name)
+@api_view(['GET'])
+def get_cruise(request):
+    cruise = models.Cruise.objects.all()
+    serialized_data = serialisers.CruiseSerializer(cruise, many=True).data
+    return Response(serialized_data)
