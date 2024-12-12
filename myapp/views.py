@@ -1,3 +1,5 @@
+import json
+
 from django.utils import timezone
 
 from django.shortcuts import render, get_object_or_404
@@ -39,16 +41,17 @@ class CruiseViewSet(ReadOnlyModelViewSet):
     queryset = Cruise.objects.all()
     serializer_class = CruiseSerializer
 
-class CabinViewSet(ViewSet):
-    api_helper = CruiseAPIHelper()
+class CabinViewSet(ReadOnlyModelViewSet):
+    queryset = Cabin.objects.all()
+    serializer_class = CabinSerializer
+
 
     @action(detail=False, methods=['get'], url_path='free-tickets/(?P<cruise_id>[^/.]+)')
     def free_tickets(self, request, cruise_id=None):
-        try:
-            response = self.api_helper.get_free_tickets(cruise_id)
-            return Response(response, status=200)
-        except Exception as e:
-            return Response({'status': 'Failed', 'message': str(e)}, status=400)
+        api_helper = CruiseAPIHelper()
+        response = api_helper.get_free_tickets(cruise_id)
+
+        return Response(json.loads(response), status=200)
 
     # @action(detail=False, methods=['get'], url_path='free-tickets/(?P<cruise_id>[^/.]+)')
     # def free_tickets(self, request, cruise_id=None):
