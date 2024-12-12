@@ -2,6 +2,8 @@ import uuid
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.db import models
+import logging
+logger = logging.getLogger(__name__)
 
 class Passenger(models.Model):
     name = models.CharField(max_length=50)
@@ -226,6 +228,7 @@ class Booking_cruise(models.Model):
 
             cabin.save()
         super().delete(*args, **kwargs)
+
 
 
 
