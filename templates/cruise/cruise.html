@@ -1,0 +1,119 @@
+{% extends 'cruise/index.html' %}
+{% load static %}
+{% block title %}Круизы{% endblock %}
+{% block content %}
+    {% if cruise %}
+        <section>
+            <h2>Что за круиз</h2>
+            <p><strong>Регион:</strong> {{ cruise.region }}</p>
+            <p><strong>Дата начала:</strong> {{ cruise.start_date }}</p>
+            <p><strong>Дата окончания:</strong> {{ cruise.end_date }}</p>
+        </section>
+        <section>
+            <h2>Маршрут и расписание</h2>
+            <table>
+                <thead>
+                <tr>
+                    <th>День</th>
+                    <th>Порт</th>
+                    <th>Описание</th>
+                    <th>Прибытие</th>
+                    <th>Отправление</th>
+                </tr>
+                </thead>
+                {#                <tbody>#}
+                {#                    {% for item in schedule %}#}
+                {#                    <tr>#}
+                {#                        <td>{{ item.day_number }}</td>#}
+                {#                        <td>{{ item.cruise_day_description.port.name_port }}</td>#}
+                {#                        <td>{{ item.cruise_day_description.description }}</td>#}
+                {#                        <td>{{ item.arrival_time }}</td>#}
+                {#                        <td>{{ item.departure_time }}</td>#}
+                {#                    </tr>#}
+                {#                    {% endfor %}#}
+                {#                </tbody>#}
+            </table>
+        </section>
+        <section>
+            <h2>Описание</h2>
+            <p>{{ cruise.description }}</p>
+        </section>
+        <section>
+            <h2>О корабле</h2>
+            <p><strong>Название корабля:</strong> {{ cruise.ship.name_ship }}</p>
+            <p><strong>Компания:</strong> {{ cruise.ship.company }}</p>
+            <p><strong>Вместимость:</strong> {{ cruise.ship.capacity }}</p>
+            <p>{{ cruise.ship.description }}</p>
+            {% if cruise.ship.image_ship %}
+                <img src="{{ cruise.ship.image_ship.url }}" alt="{{ cruise.ship.name_ship }}">
+            {% endif %}
+        </section>
+    {% else %}
+        <section class="cruise">
+            <h2>Выберите круиз</h2>
+            <div class="cruise-filter">
+                <div>
+                    Фильтры на будущее
+                </div>
+                <ul class="list-card">
+                    {% for cruise in cruises %}
+                        <li class="item-card">
+                            <div class="slider">
+                                <div class="slides" id="slides{{ cruise.id }}">
+                                    {% for r in route %}
+                                        {% if r.port.image_port and cruise.id == r.cruise.id %}
+                                            <div class="slide">
+                                                <img src="{{ r.port.image_port.url }}"
+                                                     alt="{{ r.port.name_port }}">
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <div class="navigation">
+                                    <button class="prev" onclick="moveSlide('{{ cruise.id }}', -1)">&#10094;</button>
+                                    <button class="next" onclick="moveSlide('{{ cruise.id }}', 1)">&#10095;</button>
+                                </div>
+                            </div>
+                            {#                            <img class="item-card--image" src="{% static 'images/MSC Cruises/1.jpeg' %}" alt="">#}
+                            <div class="item-card--description">
+                                <div class="description-name">
+                                    <a class="title"
+                                       href="{% url 'cruise' %}?cruise_id={{ cruise.id }}">{{ cruise.name_cruise }}</a>
+                                    <div class="no-title">
+                                        <p><b>Лайнер</b>: {{ cruise.ship.name_ship }}</p>
+                                        <p><b>Дата начала</b>: {{ cruise.start_date }}</p>
+                                        <p><b>Дата окончания</b>: {{ cruise.end_date }}</p>
+                                    </div>
+                                </div>
+                                <div class="description-price">
+                                    {% for min in ship_with_cabin_price %}
+                                        {% if min.ship == cruise.ship %}
+                                            <p>от <b>{{ min.min_price }}$</b> на 1 человека</p>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <a class="btn" href="{% url 'cruise' %}?cruise_id={{ cruise.id }}">Подробнее</a>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
+        <script>
+            const sliderStates = {};
+
+            function moveSlide(sliderId, direction) {
+                const slides = document.getElementById(`slides${sliderId}`);
+                if (!slides) return;
+
+                const totalSlides = slides.children.length;
+
+                if (!(sliderId in sliderStates)) {
+                    sliderStates[sliderId] = 0;
+                }
+                sliderStates[sliderId] = (sliderStates[sliderId] + direction + totalSlides) % totalSlides;
+                slides.style.transform = `translateX(-${sliderStates[sliderId] * 100}%)`;
+            }
+        </script>
+    {% endif %}
+{% endblock %}

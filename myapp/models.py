@@ -108,6 +108,7 @@ class Cruise(models.Model):
 class Port(models.Model):
     name_port = models.CharField(max_length=50)
     country = models.CharField(max_length=50, blank=True)
+    image_port = models.ImageField(upload_to='static/images/', blank=True, null=True, verbose_name='Port')
 
     class Meta:
         verbose_name = 'Порт'
@@ -119,13 +120,16 @@ class Routes(models.Model):
     number_day = models.IntegerField()
     port = models.ForeignKey(Port, on_delete=models.CASCADE)
     cruise = models.ForeignKey(Cruise, on_delete=models.CASCADE)
-    arrival_time = models.DateTimeField()
-    departure_time = models.DateTimeField()
+    arrival_time = models.DateTimeField(blank=True, null=True)
+    departure_time = models.DateTimeField(blank=True, null=True)
     description_route = models.CharField(max_length=100)
 
     class Meta:
         verbose_name = 'Маршруты'
         verbose_name_plural = 'Маршруты'
+
+    def __str__(self):
+        return f"{self.cruise}/{self.number_day}"
 class Cabin(models.Model):
     ship = models.ForeignKey(Ship, on_delete=models.CASCADE)
     type_cabin = models.CharField(max_length=50)

@@ -4,8 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Круизные Путешествия</title>
+    <title>{% block title %}Круизные Путешествия{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500&family=Poppins:wght@400;500;600&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
 </head>
 <body>
     <header>
@@ -14,8 +17,8 @@
         </div>
         <nav>
             <ul>
-                <li><a href="/">Главная</a></li>
-                <li><a href="#">Круизы</a></li>
+                <li><a href="{% url 'home' %}">Главная</a></li>
+                <li><a href="{% url 'cruise' %}">Круизы</a></li>
                 <li><a href="#">Направления</a></li>
                 <li><a href="#">Цены</a></li>
                 <li><a href="#">Акции</a></li>
@@ -31,62 +34,9 @@
         </div>
     </header>
      <main>
-     {% if cruise %}
-        <section>
-            <h2>Что за круиз</h2>
-            <p><strong>Регион:</strong> {{ cruise.region }}</p>
-            <p><strong>Дата начала:</strong> {{ cruise.start_date }}</p>
-            <p><strong>Дата окончания:</strong> {{ cruise.end_date }}</p>
-        </section>
-        <section>
-            <h2>Маршрут и расписание</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>День</th>
-                        <th>Порт</th>
-                        <th>Описание</th>
-                        <th>Прибытие</th>
-                        <th>Отправление</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in schedule %}
-                    <tr>
-                        <td>{{ item.day_number }}</td>
-                        <td>{{ item.cruise_day_description.port.name_port }}</td>
-                        <td>{{ item.cruise_day_description.description }}</td>
-                        <td>{{ item.arrival_time }}</td>
-                        <td>{{ item.departure_time }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </section>
-        <section>
-            <h2>Описание</h2>
-            <p>{{ cruise.description }}</p>
-        </section>
-        <section>
-            <h2>О корабле</h2>
-            <p><strong>Название корабля:</strong> {{ cruise.ship.name_ship }}</p>
-            <p><strong>Компания:</strong> {{ cruise.ship.company }}</p>
-            <p><strong>Вместимость:</strong> {{ cruise.ship.capacity }}</p>
-            <p>{{ cruise.ship.description }}</p>
-            {% if cruise.ship.image_ship %}
-                <img src="{{ cruise.ship.image_ship.url }}" alt="{{ cruise.ship.name_ship }}">
-            {% endif %}
-        </section>
-     {% else %}
-     <h2>Выберите круиз</h2>
-        <ul>
-            {% for cruise in cruises %}
-                <li>
-                    <a href="/?cruise_id={{ cruise.id }}">{{ cruise.name_cruise }}</a>
-                </li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+     {% block content %}
+         
+     {% endblock %}
     </main>
     <footer>
         <div class="footer-links">

@@ -1,5 +1,6 @@
 import json
 
+from django.db.models import Sum, Min
 from django.utils import timezone
 
 from django.shortcuts import render, get_object_or_404
@@ -9,26 +10,41 @@ from django.utils.timezone import now
 from datetime import timedelta
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from myapp.api import CruiseAPIHelper
-
-#
-#
-# def cruise_details(request):
-#     cruise_id = request.GET.get('cruise_id')
-#     if cruise_id:
-#         cruise = get_object_or_404(Cruise, id=cruise_id)
-#         print(cruise.ship.image_ship)
-#         schedule = Ports_schedule.objects.filter(cruise=cruise).order_by('day_number')
-#         return render(request, 'cruise/index.html',
-#                       {
-#                           'cruise': cruise,
-#                           'schedule': schedule
-#                       })
-#     else:
-#         cruises = Cruise.objects.all()
-#         return render(request, 'cruise/index.html', {'cruises': cruises})
 
 
+
+def cruise_details(request):
+    return render(request, 'cruise/home.html')
+
+def cruise(request):
+    cruise_id = request.GET.get('cruise_id')
+    if cruise_id:
+        cruise = get_object_or_404(Cruise, id=cruise_id)
+        # schedule = Ports_schedule.objects.filter(cruise=cruise).order_by('day_number')
+        return render(request, 'cruise/cruise.html',
+                      {
+                          'cruise': cruise,
+
+                          # 'schedule': schedule
+                      })
+    else:
+        ship_with_cabin_price =[]
+        route = Routes.objects.all()
+        cruises = Cruise.objects.all()
+        for cruise in cruises:
+            min_price_cabin = Cabin.objects.filter(ship=cruise.ship).aggregate(Min('price'))['price__min']
+            ship_with_cabin_price.append({
+                'ship': cruise.ship,
+                'min_price': min_price_cabin if min_price_cabin is not None else 'Нет кают'
+            })
+
+        # min_price_cabin = Cabin.objects.aggregate(Min('price'))['price__min']
+        return render(request, 'cruise/cruise.html',
+                      {
+                          'cruises': cruises,
+                          'ship_with_cabin_price': ship_with_cabin_price,
+                          'route': route,
+                       })
 
 
 class ShipViewSet(ModelViewSet):
@@ -45,51 +61,43 @@ class CabinViewSet(ReadOnlyModelViewSet):
     queryset = Cabin.objects.all()
     serializer_class = CabinSerializer
 
-
     @action(detail=False, methods=['get'], url_path='free-tickets/(?P<cruise_id>[^/.]+)')
     def free_tickets(self, request, cruise_id=None):
-        api_helper = CruiseAPIHelper()
-        response = api_helper.get_free_tickets(cruise_id)
+        cabins = Cabin.objects.filter(ship__cruise__id=cruise_id)
 
-        return Response(json.loads(response), status=200)
+        result = []
+        total_free_place = 0
+        total_free_cabin = 0
+        for cabin in cabins:
+            total_places = Place_cabin.objects.filter(cabin=cabin).aggregate(total=Sum('cabin__capacity'))['total'] or 0
 
-    # @action(detail=False, methods=['get'], url_path='free-tickets/(?P<cruise_id>[^/.]+)')
-    # def free_tickets(self, request, cruise_id=None):
-    #     cabins = Cabin.objects.filter(ship__cruise__id=cruise_id)
-    #
-    #     result = []
-    #     total_free_place = 0
-    #     total_free_cabin = 0
-    #     for cabin in cabins:
-    #         total_places = Place_cabin.objects.filter(cabin=cabin).aggregate(total=Sum('cabin__capacity'))['total'] or 0
-    #
-    #         reserved_places_query = Booking_cruise.objects.filter(
-    #             cruise_id=cruise_id,
-    #             place_cabin__cabin=cabin,
-    #             status__in=["reserved", "purchased"]
-    #         )
-    #
-    #         reserved_places = 0
-    #         for booking in reserved_places_query:
-    #             if booking.is_full_cabin_booking:
-    #                 reserved_places += booking.place_cabin.cabin.capacity
-    #             else:
-    #                 reserved_places += 1
-    #
-    #         free_places = total_places - reserved_places
-    #         total_free_cabin += cabin.count_free
-    #         total_free_place += free_places
-    #
-    #         result.append({
-    #             'cabin_type': cabin.type_cabin,
-    #             'total_cabin': cabin.count_free,
-    #             'total_places': total_places,
-    #             'reserved_places': reserved_places,
-    #             'free_places': max(0, free_places),
-    #         })
-    #     print(total_free_place)
-    #     print(total_free_cabin)
-    #     return Response(result)
+            reserved_places_query = Booking_cruise.objects.filter(
+                cruise_id=cruise_id,
+                place_cabin__cabin=cabin,
+                status__in=["reserved", "purchased"]
+            )
+
+            reserved_places = 0
+            for booking in reserved_places_query:
+                if booking.is_full_cabin_booking:
+                    reserved_places += booking.place_cabin.cabin.capacity
+                else:
+                    reserved_places += 1
+
+            free_places = total_places - reserved_places
+            total_free_cabin += cabin.count_free
+            total_free_place += free_places
+
+            result.append({
+                'cabin_type': cabin.type_cabin,
+                'total_cabin': cabin.count_free,
+                'total_places': total_places,
+                'reserved_places': reserved_places,
+                'free_places': max(0, free_places),
+            })
+        print(total_free_place)
+        print(total_free_cabin)
+        return Response(result)
 
 class BookingCruiseViewSet(ViewSet):
     def list(self, request):
@@ -107,10 +115,10 @@ class BookingCruiseViewSet(ViewSet):
     @action(detail=False, methods=['post'], url_path='book-cruise')
     @transaction.atomic
     def book_cruise(self, request):
-        user_id = request.data.get('user_id')
-        cruise_id = request.data.get('cruise_id')
-        place_cabin_id = request.data.get('place_cabin_id')
-        is_full_cabin_booking = request.data.get('is_full_cabin_booking', False)
+        user_id = request.query_params.get('user_id')
+        cruise_id = request.query_params.get('cruise_id')
+        place_cabin_id = request.query_params.get('place_cabin_id')
+        is_full_cabin_booking = request.query_params.get('is_full_cabin_booking', False)
 
         if not all([user_id, cruise_id, place_cabin_id]):
             return Response({'status': 'Failed', 'message': "Параметры обязательны"}, status=400)
@@ -162,10 +170,12 @@ class BookingCruiseViewSet(ViewSet):
     @transaction.atomic
     def cancel_reservation(self, request):
 
-        user_id = request.data.get('user_id')
-        ticket_numbers = request.data.get('ticket_numbers')
+        user_id = request.query_params.get('user_id')
+        ticket_numbers = request.query_params.get('ticket_numbers')
 
         if not user_id or not ticket_numbers:
+            print(user_id)
+            print(ticket_numbers)
             return Response({"status": "НЕ ОК", "error": "user_id и ticket_numbers обязательны"}, status=400)
 
         if isinstance(ticket_numbers, str):
