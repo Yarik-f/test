@@ -120,8 +120,9 @@ class Routes(models.Model):
     number_day = models.IntegerField()
     port = models.ForeignKey(Port, on_delete=models.CASCADE)
     cruise = models.ForeignKey(Cruise, on_delete=models.CASCADE)
-    arrival_time = models.DateTimeField(blank=True, null=True)
-    departure_time = models.DateTimeField(blank=True, null=True)
+    date = models.DateField(default='2025-01-01')
+    arrival_time = models.TimeField(blank=True, null=True)
+    departure_time = models.TimeField(blank=True, null=True)
     description_route = models.CharField(max_length=100)
 
     class Meta:

@@ -1,0 +1,9 @@
+{% extends 'cruise/index.html' %}
+{% load static %}
+{% block title %}Профиль{% endblock %}
+{% block content %}
+    <div>
+        <h2>Ваш профиль</h2>
+        <p>Hi! {{ user.username }}</p>
+    </div>
+{% endblock %}

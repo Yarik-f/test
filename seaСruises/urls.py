@@ -8,6 +8,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('myapp.urls')),
     path('', include('myapp.urls')),
+    path('account/register/', register_view, name='register'),
+    path('account/login/', login_view, name='login'),
+    # path('account/logout/', login_view, name='logout'),
     # path('cruise/', cruise_details, name='cruise'),
 ]
 

@@ -1,31 +1,70 @@
 import json
 
-from django.db.models import Sum, Min
-from django.utils import timezone
-
-from django.shortcuts import render, get_object_or_404
+from django.views import View
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, ViewSet
-from .serialisers import *
-from django.utils.timezone import now
-from datetime import timedelta
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from django.db.models import Sum, Min
+from django.utils import timezone
+from django.shortcuts import render, get_object_or_404, redirect
+from django.utils.timezone import now
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .forms import RegisterForm
+
+from .serialisers import *
+from datetime import timedelta
+
+def register_view(request):
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = User.objects.create_user(username=username, password=password)
+            login(request, user)
+            return redirect('home')
+    else:
+        form = RegisterForm()
+    return render(request, 'account/register.html', {'form': form})
+
+def login_view(request):
+    error_message = None
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            next_url = request.POST.get('next') or request.GET.get('next') or 'home'
+            return redirect(next_url)
+        else:
+            error_message = 'Error'
+    return render(request, 'account/login.html', {'error': error_message})
+
+def logout_view(request):
+    logout(request)
+    return redirect('home')
 
 
-def cruise_details(request):
+def home_view(request):
     return render(request, 'cruise/home.html')
 
-def cruise(request):
+def cruise_view(request):
     cruise_id = request.GET.get('cruise_id')
     if cruise_id:
         cruise = get_object_or_404(Cruise, id=cruise_id)
-        # schedule = Ports_schedule.objects.filter(cruise=cruise).order_by('day_number')
+        route = Routes.objects.filter(cruise=cruise).order_by('number_day')
+        cabins = Cabin.objects.filter(ship=cruise.ship)
+        print(cabins)
         return render(request, 'cruise/cruise.html',
                       {
                           'cruise': cruise,
-
-                          # 'schedule': schedule
+                          'route': route,
+                          'cabins': cabins,
                       })
     else:
         ship_with_cabin_price =[]
@@ -46,7 +85,12 @@ def cruise(request):
                           'route': route,
                        })
 
+class ProtectedView(LoginRequiredMixin, View):
+    login_url = '/login/'
+    redirect_field_name = 'redirect_to'
 
+    def get(self, request):
+        return render(request, 'account/profile.html')
 class ShipViewSet(ModelViewSet):
     queryset = Ship.objects.all()
     serializer_class = ShipSerializer

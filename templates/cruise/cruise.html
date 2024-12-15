@@ -3,59 +3,66 @@
 {% block title %}Круизы{% endblock %}
 {% block content %}
     {% if cruise %}
-        <section>
-            <h2>Что за круиз</h2>
-            <p><strong>Регион:</strong> {{ cruise.region }}</p>
-            <p><strong>Дата начала:</strong> {{ cruise.start_date }}</p>
-            <p><strong>Дата окончания:</strong> {{ cruise.end_date }}</p>
-        </section>
-        <section>
-            <h2>Маршрут и расписание</h2>
-            <table>
-                <thead>
-                <tr>
-                    <th>День</th>
-                    <th>Порт</th>
-                    <th>Описание</th>
-                    <th>Прибытие</th>
-                    <th>Отправление</th>
-                </tr>
-                </thead>
-                {#                <tbody>#}
-                {#                    {% for item in schedule %}#}
-                {#                    <tr>#}
-                {#                        <td>{{ item.day_number }}</td>#}
-                {#                        <td>{{ item.cruise_day_description.port.name_port }}</td>#}
-                {#                        <td>{{ item.cruise_day_description.description }}</td>#}
-                {#                        <td>{{ item.arrival_time }}</td>#}
-                {#                        <td>{{ item.departure_time }}</td>#}
-                {#                    </tr>#}
-                {#                    {% endfor %}#}
-                {#                </tbody>#}
-            </table>
-        </section>
-        <section>
-            <h2>Описание</h2>
-            <p>{{ cruise.description }}</p>
-        </section>
-        <section>
-            <h2>О корабле</h2>
-            <p><strong>Название корабля:</strong> {{ cruise.ship.name_ship }}</p>
-            <p><strong>Компания:</strong> {{ cruise.ship.company }}</p>
-            <p><strong>Вместимость:</strong> {{ cruise.ship.capacity }}</p>
-            <p>{{ cruise.ship.description }}</p>
-            {% if cruise.ship.image_ship %}
-                <img src="{{ cruise.ship.image_ship.url }}" alt="{{ cruise.ship.name_ship }}">
-            {% endif %}
-        </section>
+        <div class="wrapper">
+            <h2 class="cruise-name">{{ cruise.name_cruise }}</h2>
+            <div class="cruise-wrapper">
+                <section class="cruise">
+                    <div class="cruise-description">
+
+                        <p><b>Лайнер:</b> {{ cruise.ship }}</p>
+                        <p><b>Регион:</b> {{ cruise.region }}</p>
+                        <p><b>Дата начала:</b> {{ cruise.start_date }}</p>
+                        <p><b>Дата окончания:</b> {{ cruise.end_date }}</p>
+                    </div>
+                    {% if cruise.ship.image_ship %}
+                        <img class="cruise-image--ship" src="{{ cruise.ship.image_ship.url }}"
+                             alt="{{ cruise.ship.name_ship }}">
+                    {% endif %}
+                </section>
+                <section>
+                    <h2>Расписание</h2>
+                    <table class="styled-table">
+                        <thead>
+                        <tr>
+                            <th>День</th>
+                            <th>Порт</th>
+                            <th>Дата</th>
+                            <th>Прибытие</th>
+                            <th>Отправление</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for item in route %}
+                            <tr>
+                                <td>{{ item.number_day }}</td>
+                                <td>{{ item.port.name_port }}</td>
+                                <td>{{ item.date|date:"d.m.y" }}</td>
+                                {% if item.arrival_time == None %}
+                                    <td>-</td>
+                                {% else %}
+                                    <td>{{ item.arrival_time }}</td>
+                                {% endif %}
+                                {% if item.departure_time == None %}
+                                    <td>-</td>
+                                {% else %}
+                                    <td>{{ item.departure_time }}</td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    {% include 'cruise/cabin_slider.html' %}
+                </section>
+            </div>
+        </div>
     {% else %}
-        <section class="cruise">
+        <section class="cruise-card">
             <h2>Выберите круиз</h2>
-            <div class="cruise-filter">
+            <div class="cruise-card--filter">
                 <div>
                     Фильтры на будущее
                 </div>
-                <ul class="list-card">
+                <ul class="cruise-card--list-card">
                     {% for cruise in cruises %}
                         <li class="item-card">
                             <div class="slider">
@@ -74,7 +81,6 @@
                                     <button class="next" onclick="moveSlide('{{ cruise.id }}', 1)">&#10095;</button>
                                 </div>
                             </div>
-                            {#                            <img class="item-card--image" src="{% static 'images/MSC Cruises/1.jpeg' %}" alt="">#}
                             <div class="item-card--description">
                                 <div class="description-name">
                                     <a class="title"
@@ -100,20 +106,30 @@
             </div>
         </section>
         <script>
-            const sliderStates = {};
+            const sliderStates = {}; // Храним состояние каждого слайдера
 
+            // Функция для перемещения слайдов первого слайдера (с использованием cruise.id)
             function moveSlide(sliderId, direction) {
                 const slides = document.getElementById(`slides${sliderId}`);
                 if (!slides) return;
 
                 const totalSlides = slides.children.length;
 
+                // Если слайдер ещё не был инициализирован, то инициализируем его
                 if (!(sliderId in sliderStates)) {
                     sliderStates[sliderId] = 0;
                 }
+
+                // Обновляем текущий слайд для данного слайдера
                 sliderStates[sliderId] = (sliderStates[sliderId] + direction + totalSlides) % totalSlides;
+
+                // Для слайдера с портами
                 slides.style.transform = `translateX(-${sliderStates[sliderId] * 100}%)`;
             }
+
+            // Функция для перемещения слайдов кастомного слайдера
+            
+
         </script>
     {% endif %}
 {% endblock %}
