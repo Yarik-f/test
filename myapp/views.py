@@ -13,7 +13,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import RegisterForm
+from .forms import RegisterForm, PassengerForm
 
 from .serialisers import *
 from datetime import timedelta
@@ -30,7 +30,6 @@ def register_view(request):
     else:
         form = RegisterForm()
     return render(request, 'account/register.html', {'form': form})
-
 def login_view(request):
     error_message = None
     if request.method == 'POST':
@@ -44,15 +43,11 @@ def login_view(request):
         else:
             error_message = 'Error'
     return render(request, 'account/login.html', {'error': error_message})
-
 def logout_view(request):
     logout(request)
     return redirect('home')
-
-
 def home_view(request):
     return render(request, 'cruise/home.html')
-
 def cruise_view(request):
     cruise_id = request.GET.get('cruise_id')
     if cruise_id:
@@ -91,6 +86,18 @@ class ProtectedView(LoginRequiredMixin, View):
 
     def get(self, request):
         return render(request, 'account/profile.html')
+@login_required
+def passenger_view(request):
+    if request.method == 'POST':
+        form = PassengerForm(request.POST)
+        if form.is_valid():
+            passenger = form.save(commit=False)
+            passenger.user = request.user
+            passenger.save()
+            return redirect('profile')
+    else:
+        form = PassengerForm()
+    return render(request, 'account/fill_passenger.html', {'form': form})
 class ShipViewSet(ModelViewSet):
     queryset = Ship.objects.all()
     serializer_class = ShipSerializer
@@ -105,8 +112,9 @@ class CabinViewSet(ReadOnlyModelViewSet):
     queryset = Cabin.objects.all()
     serializer_class = CabinSerializer
 
-    @action(detail=False, methods=['get'], url_path='free-tickets/(?P<cruise_id>[^/.]+)')
+    @action(detail=False, methods=['get'], url_path='free-tickets/(?P<cruise_id>\d+)')
     def free_tickets(self, request, cruise_id=None):
+
         cabins = Cabin.objects.filter(ship__cruise__id=cruise_id)
 
         result = []
@@ -139,8 +147,6 @@ class CabinViewSet(ReadOnlyModelViewSet):
                 'reserved_places': reserved_places,
                 'free_places': max(0, free_places),
             })
-        print(total_free_place)
-        print(total_free_cabin)
         return Response(result)
 
 class BookingCruiseViewSet(ViewSet):

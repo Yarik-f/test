@@ -218,6 +218,9 @@ header .header-right a:hover {
 .cruise-image--ship {
     width: 450px;
 }
+.title-two{
+    padding: 10px;
+}
 
 .styled-table {
     width: 95%;

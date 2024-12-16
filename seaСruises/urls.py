@@ -10,6 +10,7 @@ urlpatterns = [
     path('', include('myapp.urls')),
     path('account/register/', register_view, name='register'),
     path('account/login/', login_view, name='login'),
+    path('account/fill_passenger', passenger_view, name='data-passenger')
     # path('account/logout/', login_view, name='logout'),
     # path('cruise/', cruise_details, name='cruise'),
 ]

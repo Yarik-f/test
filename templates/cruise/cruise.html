@@ -20,7 +20,7 @@
                     {% endif %}
                 </section>
                 <section>
-                    <h2>Расписание</h2>
+                    <h2 class="title-two">Расписание</h2>
                     <table class="styled-table">
                         <thead>
                         <tr>
@@ -106,28 +106,22 @@
             </div>
         </section>
         <script>
-            const sliderStates = {}; // Храним состояние каждого слайдера
+            const sliderStates = {};
 
-            // Функция для перемещения слайдов первого слайдера (с использованием cruise.id)
             function moveSlide(sliderId, direction) {
                 const slides = document.getElementById(`slides${sliderId}`);
                 if (!slides) return;
 
                 const totalSlides = slides.children.length;
-
-                // Если слайдер ещё не был инициализирован, то инициализируем его
+                
                 if (!(sliderId in sliderStates)) {
                     sliderStates[sliderId] = 0;
                 }
-
-                // Обновляем текущий слайд для данного слайдера
+                
                 sliderStates[sliderId] = (sliderStates[sliderId] + direction + totalSlides) % totalSlides;
-
-                // Для слайдера с портами
+                
                 slides.style.transform = `translateX(-${sliderStates[sliderId] * 100}%)`;
             }
-
-            // Функция для перемещения слайдов кастомного слайдера
             
 
         </script>

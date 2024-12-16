@@ -6,7 +6,7 @@ from django.contrib.auth import views as auth_views
 router = DefaultRouter()
 router.register(r'ships', ShipViewSet)
 router.register(r'passenger', PassengerViewSet)
-router.register(r'cruise', CruiseViewSet)
+router.register(r'cruise', CruiseViewSet, basename='cruise')
 router.register(r'cabins', CabinViewSet, basename='cabins')
 router.register(r'bookings', BookingCruiseViewSet, basename='bookings')
 

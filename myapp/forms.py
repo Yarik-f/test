@@ -1,4 +1,5 @@
 from django import forms
+from myapp.models import *
 from django.contrib.auth.models import User
 
 class RegisterForm(forms.ModelForm):
@@ -17,3 +18,8 @@ class RegisterForm(forms.ModelForm):
         if password and password_confirm and password != password_confirm:
             raise forms.ValidationError('Пароли не совпадают')
         return cleaned_data
+
+class PassengerForm(forms.ModelForm):
+    class Meta:
+        model = Passenger
+        fields = ['name', 'last_name', 'passport_number', 'email', 'phone_number']

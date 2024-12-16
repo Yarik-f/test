@@ -27,7 +27,6 @@
             {% endfor %}
         </div>
     </div>
-    <!-- Управление -->
     <div class="slider-controls">
         <button class="prev" onclick="moveSlide(-1)">&#10094;</button>
         <button class="next" onclick="moveSlide(1)">&#10095;</button>
@@ -41,14 +40,11 @@
         const descriptions = document.querySelectorAll('.slide-description');
         const images = document.querySelectorAll('.slide-image');
 
-        // Убрать активные классы
         descriptions[currentSlide].classList.remove('active');
         images[currentSlide].classList.remove('active');
 
-        // Вычислить новый слайд
         currentSlide = (currentSlide + direction + descriptions.length) % descriptions.length;
-
-        // Добавить активные классы
+        
         descriptions[currentSlide].classList.add('active');
         images[currentSlide].classList.add('active');
     }
