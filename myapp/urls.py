@@ -11,7 +11,7 @@ router.register(r'cabins', CabinViewSet, basename='cabins')
 router.register(r'bookings', BookingCruiseViewSet, basename='bookings')
 
 urlpatterns = [
-    path('backend/', include(router.urls)),
+    path('api/', include(router.urls)),
     path('', home_view, name='home'),
     path('cruise/', cruise_view, name='cruise'),
     path('register/', register_view, name='register'),

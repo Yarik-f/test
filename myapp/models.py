@@ -3,8 +3,8 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
-import logging
-logger = logging.getLogger(__name__)
+from django.db.models.signals import post_save, pre_save
+from django.dispatch import receiver
 
 class Passenger(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -20,6 +20,7 @@ class Passenger(models.Model):
 
     def __str__(self):
         return self.name+self.last_name
+
 class Category(models.Model):
     category = models.CharField(max_length=100)
 
@@ -135,11 +136,13 @@ class Routes(models.Model):
         return f"{self.cruise}/{self.number_day}"
 class Cabin(models.Model):
     ship = models.ForeignKey(Ship, on_delete=models.CASCADE)
-    type_cabin = models.CharField(max_length=50)
-    description_cabin = models.CharField(max_length=500)
-    capacity = models.IntegerField()
-    count_free = models.IntegerField()
-    price = models.IntegerField()
+    type_cabin = models.CharField(max_length=50, verbose_name="Тип каюты")
+    capacity = models.PositiveIntegerField(verbose_name="Вместимость каюты")
+    count_free = models.PositiveIntegerField(blank=True, null=True, verbose_name="Количество свободных кают")
+    price = models.IntegerField(verbose_name="Цена")
+    range_start = models.PositiveIntegerField(null=True, blank=True, verbose_name="Начальный номер каюты")
+    range_end = models.PositiveIntegerField(null=True, blank=True, verbose_name="Конечный номер каюты")
+    description_cabin = models.TextField(max_length=1000, verbose_name="Описание каюты")
     photo_cabin = models.ImageField(upload_to='static/images/', blank=True, null=True, verbose_name='Cabin')
 
     class Meta:
@@ -148,6 +151,17 @@ class Cabin(models.Model):
 
     def __str__(self):
         return f'Тип каюты: {self.type_cabin}/Цена за каюту: {self.price}/Вместимость {self.capacity}/ Кол-во свободных кают {self.count_free}'
+@receiver(pre_save, sender=Cabin)
+def process_cabin_data(sender, instance, **kwargs):
+    range_start = instance.range_start if instance.range_start else 0
+    range_end = instance.range_end if instance.range_end else 0
+    count_cabin = range_end - range_start
+    if count_cabin > 0:
+        instance.count_free = count_cabin + 1
+    else:
+        instance.count_free = 0
+
+
 class Place_cabin(models.Model):
     cabin = models.ForeignKey(Cabin, on_delete=models.CASCADE)
     number_cabin = models.IntegerField()
@@ -159,6 +173,32 @@ class Place_cabin(models.Model):
 
     def __str__(self):
         return f'Номер каюты {self.number_cabin}/ Кол-во мест в каюте {self.count_free_place}'
+
+@receiver(post_save, sender=Cabin)
+def create_place_for_cabin(sender, instance, created, **kwargs):
+    if created:
+        for number in range(instance.range_start, instance.range_end + 1):
+            Place_cabin.objects.create(
+                cabin=instance,
+                number_cabin=number,
+                count_free_place=instance.capacity
+            )
+
+    else:
+        existing_number = Place_cabin.objects.filter(cabin=instance).values_list('number_cabin', flat=True)
+        new_number_cabin = set(range(instance.range_start, instance.range_end + 1))
+        number_to_delete = set(existing_number) - new_number_cabin
+        Place_cabin.objects.filter(cabin=instance, number_cabin__in=number_to_delete).delete()
+
+        numbers_to_add = new_number_cabin - set(existing_number)
+        for number in numbers_to_add:
+            Place_cabin.objects.create(
+                cabin=instance,
+                number_cabin=number,
+                count_free_place=instance.capacity
+            )
+
+
 class Additional_service_cruise(models.Model):
     name_service = models.CharField(max_length=50)
     price_service = models.IntegerField()
@@ -171,7 +211,7 @@ class Additional_service_cruise(models.Model):
         return self.name_service
 class Booking_cruise(models.Model):
     ticket_number = models.UUIDField(default=uuid.uuid4, editable=False)
-    passenger = models.ForeignKey(Passenger, on_delete=models.CASCADE)
+    passenger = models.ForeignKey(User, on_delete=models.CASCADE)
     cruise = models.ForeignKey(Cruise, on_delete=models.CASCADE)
     place_cabin = models.ForeignKey(Place_cabin, on_delete=models.CASCADE)
     additional_service = models.ForeignKey(Additional_service_cruise, on_delete=models.CASCADE, blank=True, null=True)

@@ -4,6 +4,7 @@ from django.views import View
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, ViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import APIException
 
 from django.db.models import Sum, Min
 from django.utils import timezone
@@ -116,7 +117,7 @@ class CabinViewSet(ReadOnlyModelViewSet):
     def free_tickets(self, request, cruise_id=None):
 
         cabins = Cabin.objects.filter(ship__cruise__id=cruise_id)
-
+        print(cruise_id)
         result = []
         total_free_place = 0
         total_free_cabin = 0
@@ -156,8 +157,8 @@ class BookingCruiseViewSet(ViewSet):
         if not username:
             return Response({"error": "Параметр 'username' обязателен"}, status=400)
 
-        passenger = get_object_or_404(Passenger, name=username)
-        bookings = Booking_cruise.objects.filter(passenger=passenger)
+        user = get_object_or_404(User, username=username)
+        bookings = Booking_cruise.objects.filter(passenger=user)
 
         serializer = Booking_cruiseSerializer(bookings, many=True).data
         return Response(serializer)
@@ -224,8 +225,6 @@ class BookingCruiseViewSet(ViewSet):
         ticket_numbers = request.query_params.get('ticket_numbers')
 
         if not user_id or not ticket_numbers:
-            print(user_id)
-            print(ticket_numbers)
             return Response({"status": "НЕ ОК", "error": "user_id и ticket_numbers обязательны"}, status=400)
 
         if isinstance(ticket_numbers, str):
