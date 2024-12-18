@@ -172,7 +172,7 @@ class Place_cabin(models.Model):
         verbose_name_plural = 'Место в каюте'
 
     def __str__(self):
-        return f'Номер каюты {self.number_cabin}/ Кол-во мест в каюте {self.count_free_place}'
+        return f'{self.id} | Номер каюты {self.number_cabin}/ Кол-во мест в каюте {self.count_free_place}'
 
 @receiver(post_save, sender=Cabin)
 def create_place_for_cabin(sender, instance, created, **kwargs):
@@ -211,7 +211,7 @@ class Additional_service_cruise(models.Model):
         return self.name_service
 class Booking_cruise(models.Model):
     ticket_number = models.UUIDField(default=uuid.uuid4, editable=False)
-    passenger = models.ForeignKey(User, on_delete=models.CASCADE)
+    passenger = models.ForeignKey(Passenger, on_delete=models.CASCADE)
     cruise = models.ForeignKey(Cruise, on_delete=models.CASCADE)
     place_cabin = models.ForeignKey(Place_cabin, on_delete=models.CASCADE)
     additional_service = models.ForeignKey(Additional_service_cruise, on_delete=models.CASCADE, blank=True, null=True)

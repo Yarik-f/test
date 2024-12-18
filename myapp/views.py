@@ -157,8 +157,8 @@ class BookingCruiseViewSet(ViewSet):
         if not username:
             return Response({"error": "Параметр 'username' обязателен"}, status=400)
 
-        user = get_object_or_404(User, username=username)
-        bookings = Booking_cruise.objects.filter(passenger=user)
+        passenger = get_object_or_404(Passenger, name=username)
+        bookings = Booking_cruise.objects.filter(passenger=passenger)
 
         serializer = Booking_cruiseSerializer(bookings, many=True).data
         return Response(serializer)
@@ -166,10 +166,10 @@ class BookingCruiseViewSet(ViewSet):
     @action(detail=False, methods=['post'], url_path='book-cruise')
     @transaction.atomic
     def book_cruise(self, request):
-        user_id = request.query_params.get('user_id')
-        cruise_id = request.query_params.get('cruise_id')
-        place_cabin_id = request.query_params.get('place_cabin_id')
-        is_full_cabin_booking = request.query_params.get('is_full_cabin_booking', False)
+        user_id = request.data.get('user_id')
+        cruise_id = request.data.get('cruise_id')
+        place_cabin_id = request.data.get('place_cabin_id')
+        is_full_cabin_booking = request.data.get('is_full_cabin_booking', False)
 
         if not all([user_id, cruise_id, place_cabin_id]):
             return Response({'status': 'Failed', 'message': "Параметры обязательны"}, status=400)
@@ -221,8 +221,8 @@ class BookingCruiseViewSet(ViewSet):
     @transaction.atomic
     def cancel_reservation(self, request):
 
-        user_id = request.query_params.get('user_id')
-        ticket_numbers = request.query_params.get('ticket_numbers')
+        user_id = request.data.get('user_id')
+        ticket_numbers = request.data.get('ticket_numbers')
 
         if not user_id or not ticket_numbers:
             return Response({"status": "НЕ ОК", "error": "user_id и ticket_numbers обязательны"}, status=400)
