@@ -1,4 +1,6 @@
 import uuid
+from datetime import timedelta
+
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -20,7 +22,6 @@ class Passenger(models.Model):
 
     def __str__(self):
         return self.name+self.last_name
-
 class Category(models.Model):
     category = models.CharField(max_length=100)
 
@@ -96,10 +97,11 @@ class Booking_ship(models.Model):
         return f'{self.number_booking} / {self.price} / {self.status}'
 class Cruise(models.Model):
     name_cruise = models.CharField(max_length=50)
-    ship = models.ForeignKey(Ship, on_delete=models.CASCADE)
+    # ship = models.ForeignKey(Ship, on_delete=models.CASCADE)
     region = models.CharField(max_length=50)
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+    # start_date = models.DateTimeField()
+    # end_date = models.DateTimeField()
+    count_night = models.PositiveIntegerField()
     description = models.CharField(max_length=500)
 
     class Meta:
@@ -108,6 +110,49 @@ class Cruise(models.Model):
 
     def __str__(self):
         return self.name_cruise
+class Date_cruise(models.Model):
+    cruise = models.ForeignKey(Cruise, on_delete=models.CASCADE)
+    ship = models.ForeignKey(Ship, on_delete=models.CASCADE)
+    date_start = models.DateField()
+    date_end = models.DateField(blank=True, null=True)
+    period = models.PositiveIntegerField()
+
+    class Meta:
+        verbose_name = 'Дата круиза'
+        verbose_name_plural = 'Дата круиза'
+
+    def __str__(self):
+        return f'{self.id} | {self.cruise} | {self.ship} | {self.date_start} | {self.date_end}'
+
+@receiver(pre_save, sender=Date_cruise)
+def create_date_cruise(sender, instance, **kwargs):
+    if not instance.pk:
+        count_night = instance.cruise.count_night
+        date_start = instance.date_start
+        period = instance.period
+
+        pre_save.disconnect(create_date_cruise, sender=Date_cruise)
+        try:
+            with transaction.atomic():
+                for i in range(period):
+                    date_end = date_start + timedelta(days=count_night)
+
+                    if i == 0:
+                        instance.date_start = date_start
+                        instance.date_end = date_end
+                        instance.save()
+                    else:
+                        Date_cruise.objects.create(
+                            cruise=instance.cruise,
+                            ship=instance.ship,
+                            date_start=date_start,
+                            date_end=date_end,
+                            period=period
+                        )
+                    date_start = date_end
+        finally:
+            pre_save.connect(create_date_cruise, sender=Date_cruise)
+
 class Port(models.Model):
     name_port = models.CharField(max_length=50)
     country = models.CharField(max_length=50, blank=True)
@@ -134,6 +179,16 @@ class Routes(models.Model):
 
     def __str__(self):
         return f"{self.cruise}/{self.number_day}"
+class Additional_service_cruise(models.Model):
+    name_service = models.CharField(max_length=50)
+    price_service = models.IntegerField()
+
+    class Meta:
+        verbose_name = 'Дополнительные услуги на крумзе'
+        verbose_name_plural = 'Дополнительные услуги на крумзе'
+
+    def __str__(self):
+        return self.name_service
 class Cabin(models.Model):
     ship = models.ForeignKey(Ship, on_delete=models.CASCADE)
     type_cabin = models.CharField(max_length=50, verbose_name="Тип каюты")
@@ -160,8 +215,6 @@ def process_cabin_data(sender, instance, **kwargs):
         instance.count_free = count_cabin + 1
     else:
         instance.count_free = 0
-
-
 class Place_cabin(models.Model):
     cabin = models.ForeignKey(Cabin, on_delete=models.CASCADE)
     number_cabin = models.IntegerField()
@@ -173,7 +226,6 @@ class Place_cabin(models.Model):
 
     def __str__(self):
         return f'{self.id} | Номер каюты {self.number_cabin}/ Кол-во мест в каюте {self.count_free_place}'
-
 @receiver(post_save, sender=Cabin)
 def create_place_for_cabin(sender, instance, created, **kwargs):
     if created:
@@ -197,18 +249,6 @@ def create_place_for_cabin(sender, instance, created, **kwargs):
                 number_cabin=number,
                 count_free_place=instance.capacity
             )
-
-
-class Additional_service_cruise(models.Model):
-    name_service = models.CharField(max_length=50)
-    price_service = models.IntegerField()
-
-    class Meta:
-        verbose_name = 'Дополнительные услуги на крумзе'
-        verbose_name_plural = 'Дополнительные услуги на крумзе'
-
-    def __str__(self):
-        return self.name_service
 class Booking_cruise(models.Model):
     ticket_number = models.UUIDField(default=uuid.uuid4, editable=False)
     passenger = models.ForeignKey(Passenger, on_delete=models.CASCADE)

@@ -51,6 +51,9 @@ class CabinAdmin(admin.ModelAdmin):
 class Place_cabinAdmin(admin.ModelAdmin):
     pass
 
+@admin.register(Date_cruise)
+class Date_cruiseAdmin(admin.ModelAdmin):
+    pass
 @admin.register(Additional_service_cruise)
 class Additional_service_cruiseAdmin(admin.ModelAdmin):
     pass
